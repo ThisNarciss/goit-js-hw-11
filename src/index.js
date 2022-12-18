@@ -1,5 +1,6 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
+import axios from 'axios';
 
 const API_KEY = '32144711-033503d2fc66376fdc1e9e47c';
 const BACKEND_REF = 'https://pixabay.com/api/';
@@ -20,17 +21,25 @@ formRef.addEventListener('submit', onSubmitSearch);
 async function onSubmitSearch(evt) {
   evt.preventDefault();
   const inputVal = evt.currentTarget.elements.searchQuery.value;
-  console.log(inputVal);
-  const response = await fetch(
-    `https://pixabay.com/api/?key=32144711-033503d2fc66376fdc1e9e47c&q=${inputVal}&image_type=photo&orientation=horizontal&safesearch=true`
-  );
-  const result = await response.json();
-  if (!result.total) {
+
+  const response = await axios.get('https://pixabay.com/api/', {
+    params: {
+      key: '32144711-033503d2fc66376fdc1e9e47c',
+      q: inputVal,
+      image_type: 'photo',
+      orientation: 'horizontal',
+      safesearch: true,
+      page: 1,
+      per_page: 40,
+    },
+  });
+
+  if (!response.data.total) {
     Notiflix.Notify.info(
       'Sorry, there are no images matching your search query. Please try again.'
     );
   }
-  const imgMurkUp = result.hits
+  const imgMurkUp = response.data.hits
     .map(img => {
       return `<div class="photo-card">
   <img src=${img.webformatURL} alt=${img.tags} loading="lazy" width="350" height="200"/>
@@ -52,5 +61,4 @@ async function onSubmitSearch(evt) {
     })
     .join('');
   galleryRef.innerHTML = imgMurkUp;
-  console.log(result);
 }

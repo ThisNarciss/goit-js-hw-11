@@ -1,47 +1,100 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
 import axios from 'axios';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+
+const carousel = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
 
 const API_KEY = '32144711-033503d2fc66376fdc1e9e47c';
-const BACKEND_REF = 'https://pixabay.com/api/';
+const FETCH_URL = 'https://pixabay.com/api/';
 
 const formRef = document.querySelector('.search-form');
 const inputRef = document.querySelector('.search-form input');
-const btnRef = document.querySelector('.search-form button');
+const searchBtn = document.querySelector('.search-form button');
+const loadMoreBtn = document.querySelector('.load-more');
 const galleryRef = document.querySelector('div.gallery');
+loadMoreBtn.classList.remove('is-seen');
 
 console.log(formRef);
 console.log(inputRef);
-console.log(btnRef);
+console.log(searchBtn);
 console.log(galleryRef);
+console.log(loadMoreBtn);
 
-formRef.addEventListener('submit', onSubmitSearch);
-// inputRef.addEventListener('input', onInputSearchImg);
+let page = 1;
+let inputVal = '';
 
-async function onSubmitSearch(evt) {
+formRef.addEventListener('submit', onSearchSubmit);
+loadMoreBtn.addEventListener('click', onLoadMoreClick);
+
+async function onSearchSubmit(evt) {
   evt.preventDefault();
-  const inputVal = evt.currentTarget.elements.searchQuery.value;
+  galleryRef.innerHTML = '';
+  page = 1;
+  inputVal = evt.currentTarget.elements.searchQuery.value;
+  const articles = await fetchArticles(inputVal);
 
-  const response = await axios.get('https://pixabay.com/api/', {
-    params: {
-      key: '32144711-033503d2fc66376fdc1e9e47c',
-      q: inputVal,
-      image_type: 'photo',
-      orientation: 'horizontal',
-      safesearch: true,
-      page: 1,
-      per_page: 40,
-    },
-  });
-
-  if (!response.data.total) {
-    Notiflix.Notify.info(
+  if (!articles.data.total) {
+    Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
+    return;
   }
-  const imgMurkUp = response.data.hits
+  Notiflix.Notify.success(
+    `Hooray! We found ${articles.data.totalHits} images.`
+  );
+  createMurkUp(articles.data.hits);
+  scrollPageDown();
+  loadMoreBtn.classList.add('is-seen');
+}
+
+async function onLoadMoreClick() {
+  try {
+    const articles = await fetchArticles(inputVal);
+    createMurkUp(articles.data.hits);
+    scrollPageDown();
+    const allArticles = document.querySelectorAll('.photo-card');
+    console.log(articles);
+    if (articles.data.totalHits <= allArticles.length) {
+      Notiflix.Notify.failure(
+        "We're sorry, but you've reached the end of search results."
+      );
+      loadMoreBtn.classList.remove('is-seen');
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function fetchArticles(value) {
+  try {
+    const response = await axios.get(FETCH_URL, {
+      params: {
+        key: API_KEY,
+        q: value,
+        image_type: 'photo',
+        orientation: 'horizontal',
+        safesearch: true,
+        page,
+        per_page: 40,
+      },
+    });
+
+    page += 1;
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function createMurkUp(arr) {
+  const imgMurkUp = arr
     .map(img => {
-      return `<div class="photo-card">
+      return `<a href=${img.largeImageURL}><div class="photo-card">
   <img src=${img.webformatURL} alt=${img.tags} loading="lazy" width="350" height="200"/>
   <div class="info">
     <p class="info-item">
@@ -57,8 +110,24 @@ async function onSubmitSearch(evt) {
       <b>Downloads</b>${img.downloads}
     </p>
   </div>
-</div>`;
+</div></a>`;
     })
     .join('');
-  galleryRef.innerHTML = imgMurkUp;
+  galleryRef.insertAdjacentHTML('beforeend', imgMurkUp);
+  const carousel = new SimpleLightbox('.gallery a', {
+    captionsData: 'alt',
+    captionDelay: 250,
+  });
+  carousel.on('show.simplelightbox');
+  carousel.refresh();
+}
+
+function scrollPageDown() {
+  const { height: cardHeight } =
+    galleryRef.firstElementChild.getBoundingClientRect();
+
+  return window.scrollBy({
+    top: cardHeight * 10,
+    behavior: 'smooth',
+  });
 }

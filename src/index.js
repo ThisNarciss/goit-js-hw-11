@@ -4,52 +4,43 @@ import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-const carousel = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-});
-
 const API_KEY = '32144711-033503d2fc66376fdc1e9e47c';
 const FETCH_URL = 'https://pixabay.com/api/';
 
 const formRef = document.querySelector('.search-form');
-const inputRef = document.querySelector('.search-form input');
-const searchBtn = document.querySelector('.search-form button');
 const loadMoreBtn = document.querySelector('.load-more');
 const galleryRef = document.querySelector('div.gallery');
-loadMoreBtn.classList.remove('is-seen');
-
-console.log(formRef);
-console.log(inputRef);
-console.log(searchBtn);
-console.log(galleryRef);
-console.log(loadMoreBtn);
 
 let page = 1;
 let inputVal = '';
 
 formRef.addEventListener('submit', onSearchSubmit);
 loadMoreBtn.addEventListener('click', onLoadMoreClick);
+// window.addEventListener('scroll', onLoadMoreScroll);
 
 async function onSearchSubmit(evt) {
   evt.preventDefault();
   galleryRef.innerHTML = '';
+  loadMoreBtn.classList.remove('is-seen');
   page = 1;
   inputVal = evt.currentTarget.elements.searchQuery.value;
-  const articles = await fetchArticles(inputVal);
+  try {
+    const articles = await fetchArticles(inputVal);
 
-  if (!articles.data.total) {
-    Notiflix.Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
+    if (!articles.data.total) {
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
+    Notiflix.Notify.success(
+      `Hooray! We found ${articles.data.totalHits} images.`
     );
-    return;
-  }
-  Notiflix.Notify.success(
-    `Hooray! We found ${articles.data.totalHits} images.`
-  );
-  createMurkUp(articles.data.hits);
-  scrollPageDown();
-  loadMoreBtn.classList.add('is-seen');
+
+    createMurkUp(articles.data.hits);
+    scrollPageDown();
+    loadMoreBtn.classList.add('is-seen');
+  } catch (error) {}
 }
 
 async function onLoadMoreClick() {
@@ -58,17 +49,35 @@ async function onLoadMoreClick() {
     createMurkUp(articles.data.hits);
     scrollPageDown();
     const allArticles = document.querySelectorAll('.photo-card');
-    console.log(articles);
+
     if (articles.data.totalHits <= allArticles.length) {
       Notiflix.Notify.failure(
         "We're sorry, but you've reached the end of search results."
       );
       loadMoreBtn.classList.remove('is-seen');
     }
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 }
+
+// async function onLoadMoreScroll() {
+//   if (
+//     window.scrollY + window.innerHeight >=
+//     document.documentElement.scrollHeight - 1
+//   ) {
+//     try {
+//       const articles = await fetchArticles(inputVal);
+//       createMurkUp(articles.data.hits);
+//       scrollPageDown();
+//       const allArticles = document.querySelectorAll('.photo-card');
+//       console.log(articles);
+//       if (articles.data.totalHits <= allArticles.length) {
+//         Notiflix.Notify.failure(
+//           "We're sorry, but you've reached the end of search results."
+//         );
+//       }
+//     } catch (error) {}
+//   }
+// }
 
 async function fetchArticles(value) {
   try {
@@ -86,9 +95,7 @@ async function fetchArticles(value) {
 
     page += 1;
     return response;
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 }
 
 function createMurkUp(arr) {

@@ -18,7 +18,7 @@ async function onSearchSubmit(evt) {
   galleryRef.innerHTML = '';
   loadMoreBtn.classList.remove('is-seen');
   galleryApiService.page = 1;
-  const inputValue = evt.currentTarget.elements.searchQuery.value;
+  const inputValue = evt.currentTarget.elements.searchQuery.value.trim();
   galleryApiService.searchQuery = inputValue;
   try {
     if (inputValue) {

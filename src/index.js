@@ -75,11 +75,11 @@ function scrollPageDown() {
 //     document.documentElement.scrollHeight - 1
 //   ) {
 //     try {
-//       const articles = await fetchArticles(inputVal);
-//       createMurkUp(articles.data.hits);
+//       const articles = await galleryApiService.fetchArticles();
+//       createMurkUp(articles.data.hits, galleryRef);
 //       scrollPageDown();
 //       const allArticles = document.querySelectorAll('.photo-card');
-//       console.log(articles);
+//
 //       if (articles.data.totalHits <= allArticles.length) {
 //         Notiflix.Notify.failure(
 //           "We're sorry, but you've reached the end of search results."
